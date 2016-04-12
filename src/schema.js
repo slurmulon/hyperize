@@ -17,7 +17,7 @@ export const primitives = ['array', 'boolean', 'integer', 'number', 'null', 'obj
 
 export class Schema {
 
-  constructor(key: String, data: Object = {}, parent: Schema = null) {
+  constructor({key = Symbol(), data, parent}) {
     this.key    = key
     this.data   = data
     this.parent = parent
@@ -27,7 +27,8 @@ export class Schema {
     }
 
     if (this.validate(data)) {
-      schemas[key] = this
+      if (key)
+        schemas[key] = this
     } else {
       throw 'Invalid JSON Schema'
     }
@@ -62,11 +63,7 @@ export class Schema {
   }
 
   get selfLink() {
-    return this.links().find(link => link.rel === 'self')
-  }
-
-  get expanded() {
-    // dynamically follow rels to other schemas, then denormalize
+    return this.links().find(link => is(link.rel, 'self'))
   }
 
   get enumData() {
@@ -105,6 +102,10 @@ export class Schema {
     return this.data.maxLength
   }
 
+  get expanded() {
+    // dynamically follow rels to other schemas, then denormalize
+  }
+
   extend(data: Object) {
     this.data = Object.assign({}, this.data, data)
   }
@@ -114,15 +115,27 @@ export class Schema {
   }
 
   defaultValue() {
-
+    return this.data.default
   }
 
   propertySchemas() {
-
+    return this.data.dependencies
   }
 
   propertyDependencies() {
 
+  }
+
+  minProperties() {
+    return this.data.minProperties
+  }
+
+  maxProperties() {
+    return this.data.maxProperties
+  }
+
+  requiredProperties() {
+    return this.properties.filter((prop, key) => this.required.includes(key))
   }
 
   isUniqueItems() {
@@ -146,7 +159,7 @@ export class Schema {
   }
 
   links() {
-    return (this.data.links || []).map(new LinkSchema)
+    return (this.data.links || []).map(link => new LinkSchema({data: link}))
   }
 
   link(rel: String) {
@@ -154,7 +167,7 @@ export class Schema {
   }
 
   isReadOnly() {
-    return this.readOnly
+    return this.data.readOnly
   }
 
   pattern() {
@@ -165,44 +178,29 @@ export class Schema {
     return this.data.pattern
   }
 
-  minProperties() {
-    return this.data.minProperties
-  }
-
-  maxProperties() {
-    return this.data.maxProperties
-  }
-
-  definedProperties() {
-
-  }
-
-  requiredProperties() {
-    return this.properties.filter((prop, key) => this.required.includes(key))
-  }
-
   asList() {
     return [this]
   }
 
-  propose(schema) {
+  propose(schema: Object) {
     // validates a proposed schema
+    if (this.validate(schema))
   }
 
-  validate(data) {
-    // validate proposed object instance against this schema
+  validate(data: Object) {
+    return validate(data, this.data)
   }
 
-  equals() {
-
+  equals(other: Schema) {
+    return is(this, other)
   }
 
   toString() {
 
   }
 
-  static fetch(url) {
-
+  static fetch(url: String) {
+    // resource.request(url)
   }
 
   static add() {
@@ -213,25 +211,22 @@ export class Schema {
 
   }
 
-  static ized(data) {
-    if (isString(data) || isBool(data)) {
+  static ized(data) { // TODO - parent?
+    if (data instanceof Schema || isString(data) || isBool(data)) {
       return data
     }
 
-    if (isArray(data)) {
-      return data.map(new Schema)
+    if (data instanceof Array) {
+      return data.map(Schema.ized)
     }
 
-    return new Schema(data)
-  }
+    if (data instanceof Object) {
+      Object.keys(data, (key) => {
+        data[key] = Schema.ized(data)
+      })
+    }
 
-}
-
-export class HyperSchemaElem {
-
-  constructor(type, data) {
-    this.type = type
-    this.data = data
+    return new Schema({data})
   }
 
 }

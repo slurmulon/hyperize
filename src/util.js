@@ -11,7 +11,7 @@ export const is = (x, y) => x === y || Object.is(x, y)
 export const isString = (x) => x ? is(x.constructor, String) : false
 
 /**
- * Convenient type check for String
+ * Convenient type check for Array
  */
 export const isArray = (x) => x ? is(x.constructor, Array) : false
 
@@ -43,4 +43,4 @@ export const values = (obj) => Object.keys(obj).map((key) => obj[key])
 /**
  * Default module export
  */
-export default { is, isEmpty, mix }
+export default { is, isString, isArray, isBool, isEmpty, mix, entries, values }

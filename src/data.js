@@ -7,14 +7,11 @@ import {Schema} from './schema'
  */
 export class HyperData {
 
-  construtor(schema, value) {
+  construtor({key = Symbol(), value, schema}) {
+    this.key    = key
+    this.value  = value
     this.schema = schema
-    this.value = value
   }
-
-  // property(key) {
-
-  // }
 
   set value(data) {
     if (schema.validate(data)) {

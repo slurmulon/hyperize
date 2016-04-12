@@ -4,6 +4,7 @@
 
 import {is, isString, isArray, mix} from './util'
 
+import {Schema} from './schema'
 import {Resource} from './resource'
 import {URI} from 'urijs'
 
@@ -11,9 +12,9 @@ export let service = Resource
 
 export class LinkSchema {
 
-  constructor(rel, schema, data) { // TODO - maybe HyperResource instead of rel
-    this.rel  = rel
-    this.data = data
+  constructor({rel, schema, data}) { // TODO - maybe Resource instead of rel
+    this.rel    = rel
+    this.data   = data
     this.schema = schema
   }
 
@@ -21,27 +22,23 @@ export class LinkSchema {
     return this._data || {}
   }
 
-  set data(data) {
-    if (data instanceof Object) {
-      this._data = data  
-    }
+  set data(data: Object) {
+    this._data = data  
   }
 
   get rel() {
     return this._rel
   }
 
-  set rel(rel) {
-    if (isString(rel)) { // TODO - stricter validation based on standard
-      this._rel = rel
-    }
+  set rel(rel: String) {
+    this._rel = rel
   }
 
   get href() {
     return this._href
   }
 
-  set href(uri) {
+  set href(uri: String) {
     this._href = URI(uri)
   }
 
@@ -49,10 +46,8 @@ export class LinkSchema {
     return this.data.title
   }
 
-  set title(title) {
-    if (isString(rel)) {
-      mix(this.data, {title})
-    }
+  set title(title: String) {
+    mix(this.data, {title})
   }
 
   get schema() {
@@ -60,7 +55,7 @@ export class LinkSchema {
   }
 
   set schema(schema) {
-    this._schema = schema
+    this.data.$schema = schema
   }
 
   get targetSchema() {
@@ -75,16 +70,20 @@ export class LinkSchema {
     return this.data.mediaType
   }
 
-  follow() {
-
+  isActive(): Boolean {
+    return true // TODO
   }
 
-  isActive() {
-
-  }
-
-  is(rel) {
+  is(rel): Boolean {
     return this.rel === rel
+  }
+
+  follow(): Promise {
+    if (!service || !service.request instanceof Function) {
+      throw 'invalid interface for service, must define "request" method'
+    }
+
+    return service.request(this.href)
   }
 
 }

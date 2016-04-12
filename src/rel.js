@@ -13,22 +13,14 @@ export const standards = ['json-pointer', 'json-path']
  */
 export class Rel {
 
-  construtor(name: String, schema: Schema, standard: String = 'json-pointer') {
+  construtor({name, schema, standard = 'json-pointer'}) {
     this.name     = name
     this.schema   = schema
     this.standard = standard
   }
 
-  get as() {
-    return {
-      link: {},
-      data: {},
-      schema: {}
-    }
-  }
-
   get resource(): Resource {
-    // TODO - allow override
+    return new Resource(this.name)
   }
 
   /**
